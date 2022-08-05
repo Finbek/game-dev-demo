@@ -2,4 +2,5 @@
 Demo fighting game with html/css/js
 
 For access: 
-dangame.netlify.app
+
+(https://dangame.netlify.app/)
