@@ -11,23 +11,31 @@ class Sprite {
 		this.framesElapsed =0
 		this.framesHold =5
 		this.offset = offset
+		this.isLeft = false
 	}
 	draw(){
 		c.drawImage(this.image, 
-			this.framesCurrent*(this.image.width/this.framesMax),
-			0, 
-			this.image.width/this.framesMax, 
-			this.image.height, 
-			this.position.x-this.offset.x, 
-			this.position.y-this.offset.y, 
-			(this.image.width/this.framesMax)*this.scale, 
-			this.image.height*this.scale)
+				this.framesCurrent*(this.image.width/this.framesMax),
+				0, 
+				this.image.width/this.framesMax, 
+				this.image.height, 
+				this.position.x-this.offset.x, 
+				this.position.y-this.offset.y, 
+				(this.image.width/this.framesMax)*this.scale, 
+				this.image.height*this.scale)
 	}
 	animateFrames(){
 		this.framesElapsed++
 		if(this.framesElapsed%this.framesHold===0){
 			if(this.framesCurrent+1<this.framesMax) this.framesCurrent+=1
 			else this.framesCurrent=0
+		}
+	}
+	animateFramesLeft(){
+		this.framesElapsed++
+		if(this.framesElapsed%this.framesHold===0){
+			if(this.framesCurrent-1>=0) this.framesCurrent-=1
+			else this.framesCurrent=this.framesMax-1
 		}
 	}
 	update(){
@@ -45,7 +53,7 @@ class Fighter extends Sprite{
 		scale=1, 
 		framesMax=1, 
 		offset={x:0, y:0}, 
-		sprites, 
+		sprites,
 		attackBox= {offset: {}, width:undefined, height: undefined}}){
 		super({position, imageSrc, scale,framesMax, offset})
 		this.velocity = velocity
@@ -55,12 +63,13 @@ class Fighter extends Sprite{
 		this.lastKey
 		this.attackBox = {
 			position: {
-				x:this.position.x,
+				x:this.position.x+this.width/2,
 				y: this.position.y
 			},
 			offset:attackBox.offset,
 			height: attackBox.height,
-			width: attackBox.width
+			width: attackBox.width,
+			flipChange: attackBox.flipChange
 		}
 		this.state = 'idle'
 		this.isAttacking = false
@@ -74,8 +83,10 @@ class Fighter extends Sprite{
 	}
 
 	update(){
+
 		this.draw()
-		if(this.state==='death' && this.framesCurrent===this.framesMax-1) 
+
+		if((this.state==='death' && this.framesCurrent===this.framesMax-1) ||  (this.state==='deathLeft' && this.framesCurrent===0))
 			{ if(this.position.y+this.height+this.velocity.y>=canvas.height-96){
 					this.velocity.y = 0
 					this.position.y = 330
@@ -83,12 +94,15 @@ class Fighter extends Sprite{
 				else this.velocity.y+=gravity
 				return
 			}
-		this.animateFrames()
+		if(this.isLeft) this.animateFramesLeft()
+		else this.animateFrames()
 
-		this.attackBox.position.x = this.position.x+ this.attackBox.offset.x
+		if(this.state!='idle' && this.state!='idleLeft') 
+		this.attackBox.position.x = this.position.x+this.width/2+this.attackBox.offset.x
 		this.attackBox.position.y = this.position.y+this.attackBox.offset.y
-		// c.fillStyle = this.color
-		// c.fillRect(this.attackBox.position.x, this.attackBox.position.y, this.attackBox.width, this.attackBox.height)
+		
+			// c.fillStyle = this.color
+			// c.fillRect(this.attackBox.position.x, this.attackBox.position.y, this.attackBox.width, this.attackBox.height)
 		
 		if(this.position.y+this.height+this.velocity.y>=canvas.height-96){
 			this.velocity.y = 0
@@ -111,6 +125,14 @@ class Fighter extends Sprite{
 
 		
 	}
+
+	Left(side){
+		if(this.isLeft!=side){
+			this.attackBox.offset.x = -this.attackBox.offset.x+this.attackBox.flipChange
+			this.attackBox.width = -this.attackBox.width 
+			this.isLeft = side
+		}
+	}
 	jump(){
 		if(this.canJump){
 			this.canJump = false
@@ -118,29 +140,65 @@ class Fighter extends Sprite{
 			setTimeout(()=>{this.canJump= true}, 300)
 		}
 	}
+
+	jumpSprite(){
+		if(this.isLeft) this.switchSprite('jumpLeft')
+		else this.switchSprite('jump')
+	}
 	takeHit(){
 		this.health-=10
 		this.switchSprite('takeHit')
-		if(this.health<=0) 
-			this.switchSprite('death')
-		else
-			this.switchSprite('takeHit')
-
-
+		if(this.health<=0){
+			if(this.isLeft) 
+				this.switchSprite('deathLeft')
+			else
+				this.switchSprite('death')
+		}
+		else{
+			if(this.isLeft) 
+				this.switchSprite('takeHitLeft')
+			else this.switchSprite('takeHit')
+		}
 	}
+
 	attack(){
-		this.switchSprite('attack1')
+		if(this.isLeft){
+			this.switchSprite('attack1Left') 
+		}
+		else this.switchSprite('attack1')
 		this.isAttacking = true
 	}
+
+	idle(){
+		if(this.isLeft) this.switchSprite('idleLeft') 
+		else this.switchSprite('idle')
+	}
+	
+	fall(){
+		if(this.isLeft) this.switchSprite('fallLeft')
+		else this.switchSprite('fall')
+	}
+
+	run(){
+		if(this.isLeft) this.switchSprite('runLeft')
+		else this.switchSprite('run')
+	}
 	switchSprite(sprite){
-		if(this.state==sprite || this.state=='death') return
-		if(sprite !='death'){
+
+		if(this.state==sprite || this.state=='death'|| this.state=='deathLeft') return
+		if(sprite !='death' && sprite!='deathLeft'){
 			if(this.state=='attack1' && this.framesCurrent<this.framesMax-1) return 
+			if(this.state=='attack1Left' && this.framesCurrent>0) return
 			if(this.state=='takeHit' && this.framesCurrent<this.framesMax-1) return
+			if(this.state=='takeHitLeft' && this.framesCurrent>0) return
+
 		}
 		this.image =this.sprites[sprite].image
 		this.framesMax = this.sprites[sprite].framesMax
-		this.framesCurrent=0
+		if(this.isLeft){
+			this.framesCurrent=this.framesMax-1
+		}
+		else this.framesCurrent=0
 		this.state = sprite
 	}
 	

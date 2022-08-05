@@ -30,6 +30,14 @@ const player = new Fighter({
 			imageSrc: './img/samuraiMack/Idle.png',
 			framesMax:8,
 		},
+		idleLeft: {
+			imageSrc: './img/samuraiMack/Left/Idle.png',
+			framesMax:8,
+		},
+		runLeft: {
+			imageSrc: './img/samuraiMack/Left/Run.png',
+			framesMax:8,
+		},
 		run: {
 			imageSrc: './img/samuraiMack/Run.png',
 			framesMax:8,
@@ -38,30 +46,52 @@ const player = new Fighter({
 			imageSrc: './img/samuraiMack/Jump.png',
 			framesMax:2,
 		},
+		jumpLeft: {
+			imageSrc: './img/samuraiMack/Left/Jump.png',
+			framesMax:2,
+		},
 		fall:{
 			imageSrc: './img/samuraiMack/Fall.png',
+			framesMax:2,
+		},
+		fallLeft:{
+			imageSrc: './img/samuraiMack/Left/Fall.png',
 			framesMax:2,
 		},
 		attack1: {
 			imageSrc: './img/samuraiMack/Attack1.png',
 			framesMax:6,
 		},
+		attack1Left: {
+			imageSrc: './img/samuraiMack/Left/Attack1.png',
+			framesMax:6,
+		},
 		takeHit: {
 			imageSrc: './img/samuraiMack/Take Hit - white silhouette.png',
+			framesMax:4,
+		},
+		takeHitLeft: {
+			imageSrc: './img/samuraiMack/Left/Take Hit - white silhouette.png',
 			framesMax:4,
 		},
 		death: {
 			imageSrc: './img/samuraiMack/Death.png',
 			framesMax:6,
+		},
+		deathLeft: {
+			imageSrc: './img/samuraiMack/Left/Death.png',
+			framesMax:6,
 		}
+
 	},
 	attackBox: {
 		offset:{
-			x:100, 
+			x:82, 
 			y:50
 		},
 		width: 150,
-		height:50
+		height:50,
+		flipChange: 20
 	}
 })
 
@@ -127,15 +157,44 @@ const enemy = new Fighter({
 		death: {
 			imageSrc: './img/kenji/Death.png',
 			framesMax:7,
+		},
+		idleLeft: {
+			imageSrc: './img/kenji/Left/Idle.png',
+			framesMax:4,
+		},
+		runLeft: {
+			imageSrc: './img/kenji/Left/Run.png',
+			framesMax:8,
+		},
+		jumpLeft: {
+			imageSrc: './img/kenji/Left/Jump.png',
+			framesMax:2,
+		},
+		fallLeft:{
+			imageSrc: './img/kenji/Left/Fall.png',
+			framesMax:2,
+		},
+		attack1Left: {
+			imageSrc: './img/kenji/Left/Attack1.png',
+			framesMax:4,
+		},
+		takeHitLeft: {
+			imageSrc: './img/kenji/Left/Take hit.png',
+			framesMax:3,
+		},
+		deathLeft: {
+			imageSrc: './img/kenji/Left/Death.png',
+			framesMax:7,
 		}
 	},
 	attackBox: {
 		offset:{
-			x:-165, 
+			x:-190, 
 			y:50
 		},
 		width: 150,
-		height:50
+		height:50,
+		flipChange: 20
 	}
 })
 
@@ -175,67 +234,95 @@ function animate(){
 	player.velocity.x = 0
 	if(key.a.pressed && player.lastKey=='a'){
 		player.velocity.x = -5
-		player.switchSprite('run')	
+		player.Left(true)
+		player.run()	
 	}
 	else if (key.d.pressed && player.lastKey=='d'){
 		player.velocity.x = 5
-		player.switchSprite('run')	
+		player.Left(false)
+		player.run()	
 	}
 	else{
-		player.switchSprite('idle')
+		player.idle()
 	}
+	
+
 	if(player.velocity.y<0){
-		player.switchSprite('jump')	
+		player.jumpSprite()
 	}
 	if(player.velocity.y>0){
-		player.switchSprite('fall')
+		player.fall()
 	}
 
 	enemy.velocity.x = 0
 	if(key.ArrowRight.pressed && enemy.lastKey=='ArrowRight'){
 		enemy.velocity.x = 5
-		enemy.switchSprite('run')	
+		enemy.Left(true)
+		enemy.run()
 
 	}
 	else if (key.ArrowLeft.pressed && enemy.lastKey=='ArrowLeft'){
 		enemy.velocity.x = -5
-		enemy.switchSprite('run')	
+		enemy.Left(false)
+		enemy.run()
 
 	}
-	else 
-		enemy.switchSprite('idle')	
-
+	else{ 
+		enemy.idle()
+	}
 	if(enemy.velocity.y<0){
-		enemy.switchSprite('jump')	
+		enemy.jumpSprite()
 	}
 	if(enemy.velocity.y>0){
-		enemy.switchSprite('fall')
+		enemy.fall()
 	}
 
 
-	if(player.attackBox.position.x+player.attackBox.width)
 
 	
 
 	//detect collision
-	if(rectangularCollision({rectangle1:player, rectangle2:enemy}) && player.isAttacking && player.framesCurrent===4){
+	if(player.isAttacking){
+		if(player.isLeft===false && rectangularCollision({rectangle1:player, rectangle2:enemy,left:false}) && player.framesCurrent===4)	
+			{
+				player.isAttacking = false
+				enemy.takeHit()
+				gsap.to("#enemyHealth", {width:enemy.health+'%', borderRadius: '20px 0px 0px 20px'})
+			}
+		if(player.isLeft && rectangularCollision({rectangle1:player, rectangle2:enemy, left: true}) && player.framesCurrent===2){
 			player.isAttacking = false
 			enemy.takeHit()
 			gsap.to("#enemyHealth", {width:enemy.health+'%', borderRadius: '20px 0px 0px 20px'})
+		}
 	}
-	if(player.isAttacking && player.framesCurrent===4){
+	
+	if(player.isAttacking && player.framesCurrent===4 && player.isLeft==false){
 		player.isAttacking = false
 	}
 
-	if(rectangularCollision({rectangle1:enemy, rectangle2:player}) && enemy.isAttacking && enemy.framesCurrent===1){
+	if(player.isAttacking && player.framesCurrent===2 && player.isLeft){
+		player.isAttacking = false
+	}
+
+	if(enemy.isAttacking){
+		if(enemy.isAttacking && rectangularCollision({rectangle1:enemy, rectangle2:player, left: false}) &&  enemy.framesCurrent===1){
 			player.takeHit()
 			enemy.isAttacking = false
 			gsap.to("#playerHealth", {width:player.health+'%', borderRadius: '0px 20px 20px 0px'})
-
-	}
-	if(enemy.isAttacking && enemy.framesCurrent===1){
+		}
+		if(enemy.isAttacking && rectangularCollision({rectangle1:enemy, rectangle2:player, left: true}) &&  enemy.framesCurrent===3){
+			player.takeHit()
+			enemy.isAttacking = false
+			gsap.to("#playerHealth", {width:player.health+'%', borderRadius: '0px 20px 20px 0px'})
+		}
+	}	
+	if(enemy.isAttacking && enemy.framesCurrent===1 && player.isLeft===false){
 		enemy.isAttacking = false
 	}
+	if(enemy.isAttacking && enemy.framesCurrent===3 && player.isLeft){
+		enemy.isAttacking = false
+	}
+	
 	if(enemy.health<=0 || player.health<=0) endGame()
 
 }
