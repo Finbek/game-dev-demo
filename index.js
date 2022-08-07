@@ -3,9 +3,11 @@ const c= canvas.getContext('2d')
 
 canvas.width = 1024
 canvas.height = 576
+var gameid;
+
 c.fillRect(0, 0, canvas.width, canvas.height)
 
-const gravity = 0.7
+	const gravity = 0.7
 
 
 const player = new Fighter({
@@ -218,11 +220,12 @@ const key = {
 	}
 }
 
+decreaseStartTimer()
 
 decreaseTimer()
 
 function animate(){
-	window.requestAnimationFrame(animate)
+	gameid = window.requestAnimationFrame(animate)
 	
 	background.update()
 	shop.update()
@@ -323,13 +326,17 @@ function animate(){
 		enemy.isAttacking = false
 	}
 	
-	if(enemy.health<=0 || player.health<=0) endGame()
+	if(enemy.health<=0 || player.health<=0) 
+		{	
+			endGame()
+		}
 
 }
 
 animate()
 
 window.addEventListener('keydown', (event) => {
+	if(startGame===false) return
 	switch (event.key){
 		case 'd':
 			key.d.pressed = true
@@ -364,6 +371,7 @@ window.addEventListener('keydown', (event) => {
 })
 
 window.addEventListener('keyup', (event) => {
+	if(startGame===false) return
 	switch (event.key){
 		case 'd':
 			key.d.pressed = false
