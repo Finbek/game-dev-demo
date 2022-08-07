@@ -37,10 +37,11 @@ function endGame(){
 
 function decreaseStartTimer() {
 	if(startTimer>0){
-		startTimer-=1
 		document.querySelector("#displayResult").innerHTML= startTimer
 		object.style.display = 'flex'
+		startTimer-=1
 		timerId = setTimeout(decreaseStartTimer, 1000)
+
 	}
 	if(startTimer===0){
 		document.querySelector("#displayResult").innerHTML= "Fight"
